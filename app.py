@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import joblib
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 # Page config
 st.set_page_config(page_title="California House Price Predictor", layout="wide")
@@ -10,7 +11,7 @@ st.set_page_config(page_title="California House Price Predictor", layout="wide")
 st.title("🏡 California Housing Price Prediction App")
 st.write("""
 Adjust the sliders to enter house features and predict the median house price.
-This app uses a trained KNN model for predictions.
+This app uses a trained KNN model for predictions and displays interactive metrics and data insights.
 """)
 
 # Load the trained model
@@ -38,9 +39,8 @@ with col2:
     households = st.number_input("Households", 1, 10000, 500)
     median_income = st.number_input("Median Income (10k USD)", 0.1, 20.0, 5.0)
 
-# Predict button
+# Make prediction
 if st.button("🔮 Predict House Price"):
-    # Match the column names expected by the trained model
     input_df = pd.DataFrame([{
         "MedInc": median_income,
         "HouseAge": housing_median_age,
@@ -58,11 +58,38 @@ if st.button("🔮 Predict House Price"):
     except Exception as e:
         st.error(f"Error making prediction: {e}")
 
-# Display example metrics (replace with actual metrics if available)
-st.header("2️⃣ Model Performance Metrics")
-st.metric("RMSE", "$52,000")
-st.metric("R² Score", "0.79")
+# Interactive model performance metrics
+st.header("2️⃣ Model Performance Metrics (Example)")
 
-# Optional visualization for feature importance
-st.header("3️⃣ Feature Importance")
-st.info("KNN models do not support feature importance.")
+# You can replace these with your real metrics if you have them
+rmse = st.slider("RMSE (Root Mean Squared Error)", 10000, 100000, 52000)
+r2 = st.slider("R² Score", 0.0, 1.0, 0.79)
+
+st.metric("RMSE", f"${rmse:,.0f}")
+st.metric("R² Score", f"{r2:.2f}")
+
+# Optional data visualizations / insights
+st.header("3️⃣ Data Insights")
+
+st.write("Correlation heatmap of housing features (example).")
+
+# Example data for visualization (replace with your real dataset if available)
+data = pd.DataFrame({
+    "MedInc": [median_income, 5, 7, 3, 8, 4],
+    "HouseAge": [housing_median_age, 20, 30, 15, 40, 25],
+    "AveRooms": [total_rooms, 3000, 4000, 2000, 5000, 3500],
+    "AveBedrms": [total_bedrooms, 500, 700, 300, 800, 600],
+    "Population": [population, 1500, 2000, 1000, 2500, 1800],
+    "AveOccup": [households, 500, 600, 400, 700, 550]
+})
+
+# Plot correlation heatmap
+fig, ax = plt.subplots(figsize=(8,6))
+sns.heatmap(data.corr(), annot=True, cmap="coolwarm", ax=ax)
+st.pyplot(fig)
+
+# Scatterplot example
+st.write("Scatterplot: Median Income vs. Population")
+fig2, ax2 = plt.subplots()
+sns.scatterplot(x="MedInc", y="Population", data=data, ax=ax2)
+st.pyplot(fig2)
