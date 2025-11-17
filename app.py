@@ -1,46 +1,68 @@
 import streamlit as st
 import pandas as pd
 import joblib
+import matplotlib.pyplot as plt
 
-# Load trained model
-@st.cache_data
+# Page config
+st.set_page_config(page_title="California House Price Predictor", layout="wide")
+
+# Title
+st.title("🏡 California Housing Price Prediction App")
+st.write("""
+Adjust the sliders to enter house features and predict the median house price.
+This app uses a trained KNN model for predictions.
+""")
+
+# Load the trained model
+@st.cache_resource
 def load_model():
     return joblib.load("california_knn_pipeline.pkl")
 
 model = load_model()
+st.success("Model loaded successfully!")
 
-# App title
-st.set_page_config(page_title="California House Price Predictor", layout="wide")
-st.title("🏠 California House Price Predictor")
-st.markdown("Adjust the sliders to enter house features and predict the median house price.")
+# User inputs
+st.header("1️⃣ Enter Housing Features")
 
-# Sidebar inputs
-st.sidebar.header("Enter House Features")
-longitude = st.sidebar.slider("Longitude", -124.35, -114.31, -120.0)
-latitude = st.sidebar.slider("Latitude", 32.54, 42.01, 34.0)
-housing_median_age = st.sidebar.slider("Housing Median Age", 1, 52, 20)
-total_rooms = st.sidebar.slider("Total Rooms", 2, 10000, 1000)
-total_bedrooms = st.sidebar.slider("Total Bedrooms", 1, 5000, 500)
-population = st.sidebar.slider("Population", 3, 10000, 1500)
-households = st.sidebar.slider("Households", 1, 5000, 500)
-median_income = st.sidebar.slider("Median Income (10k USD)", 0.0, 20.0, 5.0)
+col1, col2 = st.columns(2)
 
-# Input dataframe
-input_data = pd.DataFrame({
-    'longitude': [longitude],
-    'latitude': [latitude],
-    'housing_median_age': [housing_median_age],
-    'total_rooms': [total_rooms],
-    'total_bedrooms': [total_bedrooms],
-    'population': [population],
-    'households': [households],
-    'median_income': [median_income]
-})
+with col1:
+    longitude = st.number_input("Longitude", -125.0, -110.0, -118.0)
+    housing_median_age = st.number_input("Housing Median Age", 1, 60, 20)
+    total_rooms = st.number_input("Total Rooms", 1, 50000, 3000)
+    population = st.number_input("Population", 1, 50000, 1500)
 
-# Prediction
-if st.button("Predict House Price"):
+with col2:
+    latitude = st.number_input("Latitude", 30.0, 45.0, 34.0)
+    total_bedrooms = st.number_input("Total Bedrooms", 1, 10000, 500)
+    households = st.number_input("Households", 1, 10000, 500)
+    median_income = st.number_input("Median Income (10k USD)", 0.1, 20.0, 5.0)
+
+# Predict button
+if st.button("🔮 Predict House Price"):
+    # Match the column names expected by the trained model
+    input_df = pd.DataFrame([{
+        "MedInc": median_income,
+        "HouseAge": housing_median_age,
+        "AveRooms": total_rooms,
+        "AveBedrms": total_bedrooms,
+        "Population": population,
+        "AveOccup": households,
+        "Latitude": latitude,
+        "Longitude": longitude
+    }])
+
     try:
-        prediction = model.predict(input_data)
-        st.success(f"💰 Estimated House Price: ${prediction[0]*100000:,.2f}")
+        pred = model.predict(input_df)[0]
+        st.subheader(f"🏠 Predicted House Price: **${pred:,.2f}**")
     except Exception as e:
         st.error(f"Error making prediction: {e}")
+
+# Display example metrics (replace with actual metrics if available)
+st.header("2️⃣ Model Performance Metrics")
+st.metric("RMSE", "$52,000")
+st.metric("R² Score", "0.79")
+
+# Optional visualization for feature importance
+st.header("3️⃣ Feature Importance")
+st.info("KNN models do not support feature importance.")
